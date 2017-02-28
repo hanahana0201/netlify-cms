@@ -100,13 +100,13 @@ export default class API {
   }
 
   persistFiles(entry, mediaFiles, options) {
-    const filePromises = [];
     const files = mediaFiles.concat(entry);
 
-    files.forEach(file => {
-      let fileObj = {};
-      fileObj.file_path = this.safeFilepath(file.path);
-      let promise = Promise.resolve().then(() => {
+    const filePromises = files.map(file => {
+      const fileObj = {
+        file_path: this.safeFilepath(file.path);
+      };
+      return Promise.resolve().then(() => {
         if (file instanceof AssetProxy) {
           return file.toBase64();
         } else {
@@ -128,8 +128,7 @@ export default class API {
       }).then(() => {
         return this.commit(options.commitMessage, [fileObj]);
       });
-      filePromises.push(promise);
-    }, this);
+    });
 
     return Promise.all(filePromises);
   }
