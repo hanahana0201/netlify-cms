@@ -43,9 +43,9 @@ export default class API {
   urlFor(path, options) {
     const params = [];
     if (options.params) {
-      for (const key in options.params) {
-        params.push(`${ key }=${ encodeURIComponent(options.params[key]) }`);
-      }
+      Object.keys(options.params).map(key =>
+        params.push(`${ key }=${ encodeURIComponent(options.params[key]) }`)
+      );
     }
     if (params.length) {
       path += `?${ params.join("&") }`;
@@ -89,7 +89,7 @@ export default class API {
 
   listFiles(path) {
     return this.request(`${ this.repoURL }/tree`, {
-      params: { path: path, ref_name: this.branch },
+      params: { path, ref_name: this.branch },
     });
   }
 
@@ -102,22 +102,21 @@ export default class API {
   persistFiles(entry, mediaFiles, options) {
     const files = mediaFiles.concat(entry);
 
-    const filePromises = files.map(file => {
+    const filePromises = files.map((file) => {
       const fileObj = {
-        file_path: this.safeFilepath(file.path);
+        file_path: this.safeFilepath(file.path),
       };
       return Promise.resolve().then(() => {
         if (file instanceof AssetProxy) {
           return file.toBase64();
-        } else {
-          return this.toBase64(file.raw);
         }
-      }).then(content => {
+        return this.toBase64(file.raw);
+      }).then((content) => {
         fileObj.content = content;
         fileObj.encoding = "base64";
-      }).then(() => {
-        return this.getFile(file.path);
-      }).then(() => {
+      })
+      .then(() => this.getFile(file.path))
+      .then(() => {
         fileObj.action = "update";
       }, (err) => {
         if (err.status === 404) {
@@ -125,9 +124,8 @@ export default class API {
         } else {
           throw err;
         }
-      }).then(() => {
-        return this.commit(options.commitMessage, [fileObj]);
-      });
+      })
+      .then(() => this.commit(options.commitMessage, [fileObj]));
     });
 
     return Promise.all(filePromises);
@@ -166,14 +164,14 @@ export default class API {
 
   safeFilepath(filepath) {
     // Gitlab only allows letters, digits, `_`, `-`, `@`, and `/` for directories in file paths.
-    return filepath.replace(/[^a-z0-9_\-@\.\/]/gi, '');
+    return filepath.replace(/[^a-z0-9_\-@./]/gi, '');
   }
 
-  commit(commit_message, actions) {
-    let branch_name = this.branch;
+  commit(commitMessage, actions) {
+    const branchName = this.branch;
     return this.request(`${ this.repoURL }/commits`, {
       method: "POST",
-      body: JSON.stringify({ branch_name, commit_message, actions }),
+      body: JSON.stringify({ branchName, commitMessage, actions }),
     });
   }
 
