@@ -12,3 +12,14 @@ install:
   - yarn
 notifications:
     email: false
+script:
+  - yarn build
+  - zip -q netlify-cms.zip -r dist
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key: $GITHUB_TOKEN
+  file: netlify-cms.zip
+  all_branches: true
+  on:
+    tags: true
