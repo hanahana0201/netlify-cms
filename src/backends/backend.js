@@ -26,7 +26,7 @@ class LocalStorageAuthStore {
 const slugFormatter = (template = "{{slug}}", entryData) => {
   const date = new Date();
   const identifier = entryData.get("title", entryData.get("path"));
-  return template.replace(/\{\{([^\}]+)\}\}/g, (_, field) => {
+  return template.replace(/\{\{([^}]+)\}\}/g, (_, field) => {
     switch (field) {
       case "year":
         return date.getFullYear();
@@ -35,9 +35,10 @@ const slugFormatter = (template = "{{slug}}", entryData) => {
       case "day":
         return (`0${ date.getDate() }`).slice(-2);
       case "slug":
-        return identifier.trim().toLowerCase().replace(/[^a-z0-9\-_]+/gi, "-");
+        return entryData.get(field, "").trim().toLowerCase().replace(/[^a-z0-9.\-_]+/gi, "-")
+              || identifier.trim().toLowerCase().replace(/[^a-z0-9\-_]+/gi, "-");
       default:
-        return entryData.get(field, "").trim().toLowerCase().replace(/[^a-z0-9\.\-_]+/gi, "-");
+        return entryData.get(field, "").trim().toLowerCase().replace(/[^a-z0-9.\-_]+/gi, "-");
     }
   });
 };
@@ -269,7 +270,9 @@ export const currentBackend = (function () {
   return (config) => {
     if (backend) { return backend; }
     if (config.get("backend")) {
-      return backend = resolveBackend(config);
+      backend = resolveBackend(config);
+      return backend;
     }
+    return false;
   };
 }());
